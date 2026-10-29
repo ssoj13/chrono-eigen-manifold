@@ -90,13 +90,32 @@
     .top-right {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
       flex-wrap: wrap;
     }
 
     .readout-cs { color: #f0abfc; }
     .readout-hol { color: #6ee7b7; }
-    .readout-tau { color: var(--muted); min-width: 78px; }
+    .readout-tau { color: var(--muted); min-width: 74px; }
+
+    .btn-human {
+      padding: 4px 11px;
+      border-radius: 6px;
+      background: rgba(16, 185, 129, 0.22);
+      border: 1px solid rgba(52, 211, 153, 0.55);
+      color: #a7f3d0;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.18);
+    }
+
+    .btn-human:hover {
+      background: rgba(16, 185, 129, 0.42);
+      box-shadow: 0 0 16px rgba(52, 211, 153, 0.35);
+    }
 
     .btn-codex {
       padding: 4px 10px;
@@ -342,24 +361,31 @@
       accent-color: var(--cyan);
     }
 
-    /* Esoteric Codex Modal Overlay */
-    .codex-modal {
+    /* Modals */
+    .codex-modal, .human-modal {
       position: absolute;
       inset: 22px;
-      background: rgba(3, 7, 18, 0.92);
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(34, 211, 238, 0.45);
+      background: rgba(3, 7, 18, 0.94);
+      backdrop-filter: blur(22px);
       border-radius: 14px;
       padding: 24px;
       z-index: 30;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.88);
       overflow-y: auto;
     }
 
-    .codex-modal.hidden {
+    .codex-modal {
+      border: 1px solid rgba(34, 211, 238, 0.45);
+    }
+
+    .human-modal {
+      border: 1px solid rgba(52, 211, 153, 0.55);
+    }
+
+    .codex-modal.hidden, .human-modal.hidden {
       display: none;
     }
 
@@ -377,6 +403,13 @@
       font-weight: 700;
       color: #67e8f9;
       letter-spacing: 0.05em;
+    }
+
+    .human-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #6ee7b7;
+      letter-spacing: 0.04em;
     }
 
     .btn-close {
@@ -423,6 +456,40 @@
       gap: 8px;
     }
 
+    .human-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      font-size: 13px;
+      line-height: 1.68;
+      color: #f1f5f9;
+    }
+
+    .human-section {
+      padding: 14px 16px;
+      border-radius: 10px;
+    }
+
+    .human-section.emerald {
+      background: rgba(6, 78, 59, 0.35);
+      border: 1px solid rgba(52, 211, 153, 0.35);
+    }
+
+    .human-section.cyan {
+      background: rgba(8, 51, 68, 0.38);
+      border: 1px solid rgba(34, 211, 238, 0.35);
+    }
+
+    .human-section.fuchsia {
+      background: rgba(74, 4, 78, 0.32);
+      border: 1px solid rgba(232, 121, 249, 0.35);
+    }
+
+    .human-section h3 {
+      font-size: 13.5px;
+      margin-bottom: 6px;
+    }
+
     @media (max-width: 900px) {
       .hud-right, .brand-sub { display: none; }
       .control-deck { grid-template-columns: repeat(2, 1fr); }
@@ -449,6 +516,12 @@
         <span id="holonomyReadout" class="readout-hol">∮ω = 1.9994 π</span>
         <span id="fpsReadout" class="readout-tau">τ = 0.00s</span>
 
+        <!-- NEW: Plain-Human Explanation Button -->
+        <button id="btnHuman" class="btn-human">
+          💡 <span id="uiHumanBtn">По-человечески</span>
+        </button>
+
+        <!-- Esoteric Codex Button -->
         <button id="btnCodex" class="btn-codex">
           📜 <span id="uiCodexBtn">КОДЕКС Ξ</span>
         </button>
@@ -493,6 +566,21 @@
           <div id="tensorStream" class="tensor-list"></div>
         </div>
       </aside>
+
+      <!-- NEW: Plain-Human Explanation Modal -->
+      <section id="humanModal" class="human-modal hidden">
+        <div>
+          <div class="codex-top">
+            <span id="uiHumanTitle" class="human-title"></span>
+            <button id="btnCloseHuman" class="btn-close">✕</button>
+          </div>
+          <div id="uiHumanContent" class="human-grid"></div>
+        </div>
+        <div class="codex-footer" style="margin-top:14px;">
+          <span id="uiHumanFooter"></span>
+          <span>Hopf (1931) // Calabi–Yau (1957–1977) // Chern–Simons (1974)</span>
+        </div>
+      </section>
 
       <!-- Expandable Esoteric Codex Modal -->
       <section id="codexModal" class="codex-modal hidden">
@@ -566,6 +654,7 @@
       const I18N = {
         en: {
           title: 'Ξ-HOPF HYPERFIBRATION // S³ → S²',
+          humanBtn: 'In Plain English',
           codexBtn: 'Ξ-CODEX',
           spinorHeader: 'SPINOR CONNECTION ∇μΨ',
           poincareHeader: 'POINCARÉ LOCUS ∂Ω',
@@ -584,10 +673,30 @@
           codexBody1: 'This apparatus synthesizes non-abelian Chern–Simons gauge holonomies across an inverse stereographic Hopf fibration π: S³ ↪ R⁴ → CP¹. Each luminescent filament represents an isoclinic pre-image locus where chiral Weyl spinors undergo spontaneous topological de-compactification under Ricci-flat Kähler metric perturbations.',
           codexBody2: 'By modulating the (p,q)-toroidal linking number and anomalous spectral dispersion Ω, the observer projects fourth-dimensional symplectic caustics directly onto the Poincaré recurrence boundary ∂Ω without collapsing the underlying Atiyah–Patodi–Singer η-invariant.',
           codexBody3: 'When the W-Folding parameter Λ crosses the critical Pontryagin threshold, left-handed SU(2)_L and right-handed SU(2)_R Lie algebra generators decouple into asynchronous Khovanov bigraded torsion strata.',
-          codexFooter: 'STATUS: NON-EUCLIDEAN PHASE LOCK ACTIVE // ZERO TRIVIAL COHOMOLOGY DETECTED'
+          codexFooter: 'STATUS: NON-EUCLIDEAN PHASE LOCK ACTIVE // ZERO TRIVIAL COHOMOLOGY DETECTED',
+          humanTitle: '💡 WHAT ARE WE ACTUALLY LOOKING AT? (IN PLAIN HUMAN LANGUAGE)',
+          humanFooter: 'Higher-Dimensional Geometry // Black Hole Entropy // 3D Quaternions // Quantum Bloch Sphere',
+          humanHtml: `
+            <div class="human-section emerald">
+              <h3 style="color:#6ee7b7;">1. What is happening on the screen? (Manifolds & 4D Shadows)</h3>
+              You are looking at a real-time 3D shadow (stereographic projection) of a <strong>4-dimensional sphere (S³)</strong> sliced into nested, glowing rings. In mathematics, curved spaces of any dimension are called <strong>manifolds</strong> (<em>многообразия</em>). Just as a flat 2D map of the Earth stretches continents near the poles, projecting a 4D sphere into our 3D space transforms its circles into nested donuts (<strong>Clifford tori</strong>) that turn themselves inside-out as they rotate along the 4th coordinate <em>W</em>.
+            </div>
+            <div class="human-section cyan">
+              <h3 style="color:#67e8f9;">2. Who invented this and how?</h3>
+              • <strong>The Hopf Fibration (1931):</strong> German mathematician Heinz Hopf discovered a mind-bending geometric fact: a 4-dimensional sphere can be completely filled by ordinary 1D circles so that <em>every single circle passes through every other circle</em> (linked like rings in chainmail) without ever touching or intersecting.<br/>
+              • <strong>Calabi–Yau Manifolds (1957–1977):</strong> Eugenio Calabi conjectured and Shing-Tung Yau proved that higher-dimensional spaces can fold into intricate shapes with zero average gravitational curvature ("Ricci-flat metrics").
+            </div>
+            <div class="human-section fuchsia">
+              <h3 style="color:#f0abfc;">3. Why does it matter & where is it used? (Black Holes, 3D Engines, Quantum Physics)</h3>
+              • <strong>Black Holes & Extra Dimensions:</strong> The equations in the top bar (<em>Chern–Simons functional</em> and <em>Calabi–Yau metrics</em>) are used in theoretical physics to compute the quantum entropy of black hole event horizons and model how 6 extra spatial dimensions are curled up at every point of spacetime.<br/>
+              • <strong>3D Graphics (Maya, Houdini, Unreal) & Spacecraft Navigation:</strong> The 4D sphere S³ is the exact mathematical space of <strong>unit quaternions</strong>. Every time a 3D camera, character rig, or spacecraft attitude controller rotates smoothly without "gimbal lock", it travels along trajectories on this 4D sphere.<br/>
+              • <strong>Quantum Computers & Fusion Tokamaks:</strong> The state of a quantum bit (qubit) maps from S³ to the 2D Bloch sphere via this exact Hopf fibration, and magnetic vortex rings ("Hopfions") help confine superheated plasma inside nuclear fusion reactors.
+            </div>
+          `
         },
         ru: {
           title: 'Ξ-ГИПЕРРАССЛОЕНИЕ ХОПФА // S³ → S²',
+          humanBtn: 'По-человечески',
           codexBtn: 'КОДЕКС Ξ',
           spinorHeader: 'СПИНОРНАЯ СВЯЗНОСТЬ ∇μΨ',
           poincareHeader: 'СЕЧЕНИЕ ПУАНКАРЕ ∂Ω',
@@ -606,10 +715,30 @@
           codexBody1: 'Установка осуществляет неабелеву редукцию калибровочной связности Черна—Саймонса вдоль обратного стереографического расслоения Хопфа π: S³ ↪ R⁴ → CP¹. Каждая каустическая траектория суть изоклинный прообраз кирального биспинора Вейля, претерпевающего топологическую декомпактификацию в риччи-плоской кэлеровой метрике.',
           codexBody2: 'Модуляция тороидального индекса зацепления (p,q) и аномальной фазовой дисперсии Ω индуцирует проекцию четырёхмерных симплектических каустик на гиперповерхность возврата Пуанкаре ∂Ω без разрушения спектральной асимметрии эта-инварианта Атьи—Патоди—Зингера.',
           codexBody3: 'При превышении параметром метрического сдвига Λ критического порога Понтрягина генераторы подалгебр Ли SU(2)_L и SU(2)_R расщепляются в асинхронные биградуированные страты кручения Хованова.',
-          codexFooter: 'СТАТУС: НЕЕВКЛИДОВ ФАЗОВЫЙ ЗАХВАТ АКТИВЕН // ТРИВИАЛЬНЫЕ КОГОМОЛОГИИ ОТСУТСТВУЮТ'
+          codexFooter: 'СТАТУС: НЕЕВКЛИДОВ ФАЗОВЫЙ ЗАХВАТ АКТИВЕН // ТРИВИАЛЬНЫЕ КОГОМОЛОГИИ ОТСУТСТВУЮТ',
+          humanTitle: '💡 ЧТО ЗДЕСЬ ПРОИСХОДИТ НА САМОМ ДЕЛЕ? (ОБЪЯСНЕНИЕ НА ЧЕЛОВЕЧЕСКОМ ЯЗЫКЕ)',
+          humanFooter: 'Многомерные многообразия // Энтропия чёрных дыр // Кватернионы в 3D // Квантовые кубиты',
+          humanHtml: `
+            <div class="human-section emerald">
+              <h3 style="color:#6ee7b7;">1. Что мы видим на экране? (Многообразия и 4D-тень)</h3>
+              Вы абсолютно точно угадали! В математике такие искривлённые пространства называются <strong>многомерными многообразиями (manifolds)</strong>. Прямо сейчас видеокарта в реальном времени считает 3D-тень (стереографическую проекцию) <strong>четырёхмерной сферы (S³)</strong>. Как плоская карта Земли искажает материки у полюсов, так и проекция 4D-сферы в наш трёхмерный мир превращает её окружности в семейство вложенных светящихся бубликов (<strong>торов Клиффорда</strong>), которые непрерывно выворачиваются наизнанку при вращении вдоль четвёртой координаты <em>W</em>.
+            </div>
+            <div class="human-section cyan">
+              <h3 style="color:#67e8f9;">2. Как и кто это изобрёл?</h3>
+              • <strong>Расслоение Хопфа (1931):</strong> Немецкий математик Хайнц Хопф открыл парадоксальный геометрический факт: 4-мерную сферу можно без остатка заполнить обычными окружностями так, что <em>каждая окружность будет продета сквозь каждую другую</em> (как кольца в кольчуге), ни разу не пересекаясь и не касаясь друг друга.<br/>
+              • <strong>Пространства Калаби—Яу (1957–1977):</strong> Эудженио Калаби предположил, а Шинтан Яу доказал, что многомерные пространства могут сворачиваться в сложнейшие узлы с нулевой средней гравитационной кривизной (риччи-плоские метрики).
+            </div>
+            <div class="human-section fuchsia">
+              <h3 style="color:#f0abfc;">3. Нахрена это нужно и где применяется? (От чёрных дыр до 3D-движков)</h3>
+              • <strong>Чёрные дыры и скрытые измерения Вселенной:</strong> Уравнения в верхней строке (<em>инвариант Черна—Саймонса</em> и <em>метрики Калаби—Яу</em>) напрямую используются физиками-теоретиками для расчёта квантовой энтропии горизонта событий чёрных дыр и описания того, как в каждой точке пространства свёрнуты дополнительные измерения в теории струн.<br/>
+              • <strong>3D-графика (Maya, Houdini, Unreal) и космонавтика:</strong> Четырёхмерная сфера S³ — это в точности пространство <strong>единичных кватернионов</strong>. Каждый раз, когда в 3D-движке плавно поворачивается камера или кость рига без «складывания рамок» (gimbal lock), или когда гироскопы ориентируют космический аппарат, расчёт идёт именно по этой 4D-сфере.<br/>
+              • <strong>Квантовые компьютеры и термоядерные реакторы:</strong> Состояние квантового кубита переводится в сферу Блоха ровно через расслоение Хопфа, а замкнутые магнитные вихри такой же топологии («хопфионы») удерживают плазму в токамаках.
+            </div>
+          `
         },
         mn: {
           title: 'Ξ-ХОПФЫН ГИПЕР ДАВХАРГАЖИЛТ // S³ → S²',
+          humanBtn: 'Энгийнээр тайлбарлах',
           codexBtn: 'Ξ-СУДАР',
           spinorHeader: 'СПИНОРЫН ХОЛБООС ∇μΨ',
           poincareHeader: 'ПУАНКАРЕГИЙН ОГТЛОЛ ∂Ω',
@@ -628,7 +757,26 @@
           codexBody1: 'Энэхүү төхөөрөмж нь урвуу стереограф Хопфын давхаргажилт π: S³ ↪ R⁴ → CP¹ дагуух Абелын бус Черн–Саймонсын калибрын голономийг синтезлэнэ. Гэрэлтэгч утаслаг бүр нь Риччи-хавтгай Кэлерийн метрикийн хэлбэлзэл дор топологийн задаргаанд орж буй Вейлийн спинорын изоклин прообраз юм.',
           codexBody2: 'Тороид гогцооны (p,q)-индекс болон спектрийн гаж дисперс Ω-г тохируулснаар ажиглагч Атья–Патоди–Зингерийн η-инвариантыг эвдэлгүйгээр дөрвөн хэмжээст симплектик каустикийг Пуанкарегийн буцалтын зааг ∂Ω руу шууд проекцлоно.',
           codexBody3: 'Метрикийн W-шилжилтийн параметр Λ нь Понтрягины критикийн босгыг давахад зүүн SU(2)_L болон баруун SU(2)_R Ли алгебрын генераторууд Ховановын давхар зэрэглэлт мушгиралтын давхаргуудад задарна.',
-          codexFooter: 'ТӨЛӨВ: ЕВКЛИДИЙН БУС ФАЗЫН ТҮГЖЭЭ ИДЭВХТЭЙ // ТРИВИАЛЬ КОГОМОЛОГИ ИЛРЭЭГҮЙ'
+          codexFooter: 'ТӨЛӨВ: ЕВКЛИДИЙН БУС ФАЗЫН ТҮГЖЭЭ ИДЭВХТЭЙ // ТРИВИАЛЬ КОГОМОЛОГИ ИЛРЭЭГҮЙ',
+          humanTitle: '💡 ЭНД ЯГ ЮУ БОЛЖ БАЙНА ВЭ? (ЭНГИЙН ХҮНИЙ ХЭЛЭЭР)',
+          humanFooter: 'Олон хэмжээст огторгуй // Хар нүхний энтропи // 3D Кватернион // Квант кубит',
+          humanHtml: `
+            <div class="human-section emerald">
+              <h3 style="color:#6ee7b7;">1. Бид дэлгэц дээр юу харж байна вэ? (Олон янз байдал ба 4D сүүдэр)</h3>
+              Та яг зөв таалаа! Математикт ийм муруйсан олон хэмжээст огторгуйг <strong>олон янз байдал (manifolds)</strong> гэж нэрлэдэг. Дэлгэц дээр <strong>дөрвөн хэмжээст бөмбөрцгийн (S³)</strong> 3D сүүдэр бодит хугацаанд харагдаж байна. 4D бөмбөрцгийг бидний 3D ертөнц рүү буулгахад түүний тойргууд нь бие биенийхээ дотуур сүлжилдсэн гэрэлт цагираг (<strong>Клиффордын тор</strong>) болж, 4-р хэмжээс W дагуу эргэх үед дотор гаднагүй эргэлдэнэ.
+            </div>
+            <div class="human-section cyan">
+              <h3 style="color:#67e8f9;">2. Үүнийг хэн, хэрхэн нээсэн бэ?</h3>
+              • <strong>Хопфын давхаргажилт (1931):</strong> Германы математикч Хайнц Хопф 4 хэмжээст бөмбөрцгийг хоорондоо огтлолцдоггүй мөртлөө гинжин хуяг шиг бие биетэйгээ гогцоолдсон тойргуудаар бүрэн дүүргэж болдгийг нээсэн.<br/>
+              • <strong>Калаби–Яу огторгуй (1957–1977):</strong> Эуженио Калаби болон Шинтан Яу нар олон хэмжээст огторгуй нь таталцлын тэг муруйлттайгаар ("Риччи-хавтгай метрик") эвхэгдэж болдгийг баталсан.
+            </div>
+            <div class="human-section fuchsia">
+              <h3 style="color:#f0abfc;">3. Энэ нь ямар хэрэгтэй вэ, хаана ашиглагддаг вэ? (Хар нүхнээс 3D график хүртэл)</h3>
+              • <strong>Хар нүх ба Утасны онол:</strong> Дээд самбар дээрх Черн–Саймонсын тэгшитгэл болон Калаби–Яугийн метрикийг физикчид хар нүхний үзэгдлийн хаяаны квант энтропи болон орчлон ертөнцийн нуугдмал хэмжээсүүдийг тооцоолоход шууд ашигладаг.<br/>
+              • <strong>3D график (Maya, Houdini, Unreal) ба Сансрын хөлөг:</strong> 4D бөмбөрцөг S³ нь <strong>нэгж кватернионуудын</strong> огторгуй юм. 3D камер, дүрийн яс эсвэл сансрын хөлэг гацалтгүй (gimbal lock-гүй) зөөлөн эргэх бүрт яг энэ 4D бөмбөрцгийн траектороор хөдөлдөг.<br/>
+              • <strong>Квант компьютер ба Халуун цөмийн реактор:</strong> Квант кубитын төлөв болон токамак реакторын соронзон плазмын хуйлрал ("хопфион") нь яг энэ Хопфын геометрээр тодорхойлогддог.
+            </div>
+          `
         }
       };
 
@@ -640,6 +788,7 @@
         const d = I18N[lang];
         document.documentElement.lang = lang;
         document.getElementById('uiTitle').textContent = d.title;
+        document.getElementById('uiHumanBtn').textContent = d.humanBtn;
         document.getElementById('uiCodexBtn').textContent = d.codexBtn;
         document.getElementById('uiSpinorHeader').textContent = d.spinorHeader;
         document.getElementById('uiPoincareHeader').textContent = d.poincareHeader;
@@ -659,6 +808,9 @@
         document.getElementById('uiCodexBody2').textContent = d.codexBody2;
         document.getElementById('uiCodexBody3').textContent = d.codexBody3;
         document.getElementById('uiCodexFooter').textContent = d.codexFooter;
+        document.getElementById('uiHumanTitle').textContent = d.humanTitle;
+        document.getElementById('uiHumanFooter').textContent = d.humanFooter;
+        document.getElementById('uiHumanContent').innerHTML = d.humanHtml;
 
         document.querySelectorAll('.lang-btn').forEach(btn => {
           btn.classList.toggle('active', btn.dataset.lang === lang);
@@ -670,7 +822,18 @@
       });
 
       const codexModal = document.getElementById('codexModal');
+      const humanModal = document.getElementById('humanModal');
+
+      document.getElementById('btnHuman').addEventListener('click', () => {
+        codexModal.classList.add('hidden');
+        humanModal.classList.toggle('hidden');
+      });
+      document.getElementById('btnCloseHuman').addEventListener('click', () => {
+        humanModal.classList.add('hidden');
+      });
+
       document.getElementById('btnCodex').addEventListener('click', () => {
+        humanModal.classList.add('hidden');
         codexModal.classList.toggle('hidden');
       });
       document.getElementById('btnCloseCodex').addEventListener('click', () => {
