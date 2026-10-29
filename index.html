@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ξ-MANIFOLD // SO(4) CHRONOSYNCLASTIC FIBRATION</title>
+  <style>
+    :root {
+      --bg: #03050c;
+      --panel: rgba(6, 10, 22, 0.74);
+      --border: rgba(56, 189, 248, 0.26);
+      --cyan: #38bdf8;
+      --cyan-soft: #bae6fd;
+      --fuchsia: #e879f9;
+      --emerald: #34d399;
+      --amber: #fbbf24;
+      --muted: rgba(186, 230, 253, 0.58);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: #e2e8f0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app-shell {
+      display: flex;
+      flex-direction: column;
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
+
+    /* Top Telemetry & Language Switcher Bar */
+    .top-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 18px;
+      background: rgba(2, 6, 16, 0.85);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      font-size: 12px;
+      z-index: 15;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .pulse-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #22d3ee;
+      box-shadow: 0 0 12px #22d3ee;
+      animation: pulseGlow 3.2s ease-in-out infinite;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 0.55; transform: scale(0.92); }
+      50% { opacity: 1; transform: scale(1.08); }
+    }
+
+    .brand-title {
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: #67e8f9;
+    }
+
+    .brand-sub {
+      color: var(--muted);
+    }
+
+    .top-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .readout-cs { color: #f0abfc; }
+    .readout-hol { color: #6ee7b7; }
+    .readout-tau { color: var(--muted); min-width: 78px; }
+
+    .btn-codex {
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: rgba(245, 158, 11, 0.16);
+      border: 1px solid rgba(251, 191, 36, 0.45);
+      color: #fde68a;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+
+    .btn-codex:hover {
+      background: rgba(245, 158, 11, 0.34);
+      box-shadow: 0 0 14px rgba(251, 191, 36, 0.25);
+    }
+
+    .lang-switch {
+      display: inline-flex;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid rgba(56, 189, 248, 0.45);
+      background: rgba(0, 0, 0, 0.65);
+    }
+
+    .lang-btn {
+      padding: 4px 9px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      border: none;
+      background: transparent;
+      color: rgba(255, 255, 255, 0.55);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .lang-btn:hover {
+      color: #fff;
+    }
+
+    .lang-btn.active {
+      background: rgba(6, 182, 212, 0.38);
+      color: #a5f3fc;
+    }
+
+    /* Main Viewport */
+    .viewport {
+      position: relative;
+      flex: 1;
+      width: 100%;
+      overflow: hidden;
+      background: #000;
+    }
+
+    #glCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: grab;
+    }
+
+    #glCanvas:active {
+      cursor: grabbing;
+    }
+
+    /* HUD Overlays */
+    .hud-left {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 285px;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .hud-right {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 280px;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .hud-card {
+      background: var(--panel);
+      backdrop-filter: blur(12px);
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+    }
+
+    .hud-card.cyan { border: 1px solid rgba(34, 211, 238, 0.32); }
+    .hud-card.fuchsia { border: 1px solid rgba(232, 121, 249, 0.32); }
+    .hud-card.emerald { border: 1px solid rgba(52, 211, 153, 0.32); }
+
+    .hud-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 700;
+      margin-bottom: 8px;
+      gap: 6px;
+    }
+
+    .matrix-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px 12px;
+      color: rgba(165, 243, 252, 0.88);
+      font-size: 12px;
+    }
+
+    #poincareCanvas {
+      width: 100%;
+      height: 100px;
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.55);
+      display: block;
+    }
+
+    .tensor-list {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .tensor-row {
+      display: flex;
+      justify-content: space-between;
+      color: rgba(209, 250, 229, 0.9);
+    }
+
+    /* Bottom Floating Action Bar */
+    .floating-bar {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      right: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      z-index: 10;
+    }
+
+    .preset-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .preset-btn, .invert-btn {
+      padding: 6px 12px;
+      border-radius: 7px;
+      font-family: inherit;
+      font-size: 12px;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      transition: all 0.16s ease;
+    }
+
+    .preset-0 {
+      background: rgba(6, 182, 212, 0.2);
+      border: 1px solid rgba(34, 211, 238, 0.45);
+      color: #a5f3fc;
+    }
+    .preset-0:hover { background: rgba(6, 182, 212, 0.38); }
+
+    .preset-1 {
+      background: rgba(217, 70, 239, 0.2);
+      border: 1px solid rgba(232, 121, 249, 0.45);
+      color: #f5d0fe;
+    }
+    .preset-1:hover { background: rgba(217, 70, 239, 0.38); }
+
+    .preset-2 {
+      background: rgba(245, 158, 11, 0.2);
+      border: 1px solid rgba(251, 191, 36, 0.45);
+      color: #fde68a;
+    }
+    .preset-2:hover { background: rgba(245, 158, 11, 0.38); }
+
+    .invert-btn {
+      background: rgba(16, 185, 129, 0.2);
+      border: 1px solid rgba(52, 211, 153, 0.45);
+      color: #a7f3d0;
+    }
+    .invert-btn:hover { background: rgba(16, 185, 129, 0.38); }
+
+    .mouse-hint {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.65);
+      background: rgba(0, 0, 0, 0.65);
+      padding: 6px 12px;
+      border-radius: 7px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(8px);
+    }
+
+    /* Bottom Slider Deck */
+    .control-deck {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      padding: 12px 18px;
+      background: rgba(2, 6, 16, 0.92);
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      z-index: 15;
+    }
+
+    .slider-item {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .slider-label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .slider-label {
+      color: var(--muted);
+    }
+
+    input[type="range"] {
+      width: 100%;
+      cursor: pointer;
+      accent-color: var(--cyan);
+    }
+
+    /* Esoteric Codex Modal Overlay */
+    .codex-modal {
+      position: absolute;
+      inset: 22px;
+      background: rgba(3, 7, 18, 0.92);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(34, 211, 238, 0.45);
+      border-radius: 14px;
+      padding: 24px;
+      z-index: 30;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85);
+      overflow-y: auto;
+    }
+
+    .codex-modal.hidden {
+      display: none;
+    }
+
+    .codex-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(34, 211, 238, 0.25);
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+
+    .codex-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #67e8f9;
+      letter-spacing: 0.05em;
+    }
+
+    .btn-close {
+      padding: 4px 12px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .btn-close:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .codex-body {
+      line-height: 1.7;
+      font-size: 13px;
+      color: #e0f2fe;
+      margin-bottom: 14px;
+    }
+
+    .codex-equation {
+      padding: 14px 16px;
+      border-radius: 8px;
+      background: rgba(8, 47, 73, 0.45);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: #fde68a;
+      font-size: 12.5px;
+      margin: 14px 0;
+      overflow-x: auto;
+      white-space: pre-wrap;
+    }
+
+    .codex-footer {
+      border-top: 1px solid rgba(34, 211, 238, 0.2);
+      padding-top: 12px;
+      font-size: 12px;
+      color: #6ee7b7;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    @media (max-width: 900px) {
+      .hud-right, .brand-sub { display: none; }
+      .control-deck { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 600px) {
+      .hud-left { width: 230px; }
+      .control-deck { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Top Arcane Telemetry & Language Switcher Bar -->
+    <header class="top-bar">
+      <div class="brand-group">
+        <span class="pulse-dot"></span>
+        <span id="uiTitle" class="brand-title">Ξ-ГИПЕРРАССЛОЕНИЕ ХОПФА // S³ → S²</span>
+        <span class="brand-sub">[SO(4) ≅ SU(2)L × SU(2)R / Z₂]</span>
+      </div>
+
+      <div class="top-right">
+        <span id="chernReadout" class="readout-cs">CS(A) = +0.84192 i</span>
+        <span id="holonomyReadout" class="readout-hol">∮ω = 1.9994 π</span>
+        <span id="fpsReadout" class="readout-tau">τ = 0.00s</span>
+
+        <button id="btnCodex" class="btn-codex">
+          📜 <span id="uiCodexBtn">КОДЕКС Ξ</span>
+        </button>
+
+        <div class="lang-switch" role="group" aria-label="Language Switcher">
+          <button data-lang="en" class="lang-btn">EN</button>
+          <button data-lang="ru" class="lang-btn active">RU</button>
+          <button data-lang="mn" class="lang-btn">MN</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main WebGL2 Viewport -->
+    <main class="viewport">
+      <canvas id="glCanvas"></canvas>
+
+      <!-- Left HUD -->
+      <aside class="hud-left">
+        <div class="hud-card cyan">
+          <div class="hud-header">
+            <span id="uiSpinorHeader" style="color:#22d3ee;">СПИНОРНАЯ СВЯЗНОСТЬ ∇μΨ</span>
+            <span id="manifoldState" style="color:#fbbf24;">КОГЕРЕНТНО</span>
+          </div>
+          <div id="matrixDump" class="matrix-grid"></div>
+        </div>
+
+        <div class="hud-card fuchsia">
+          <div class="hud-header">
+            <span id="uiPoincareHeader" style="color:#f0abfc;">СЕЧЕНИЕ ПУАНКАРЕ ∂Ω</span>
+            <span id="lyapunovReadout" style="color:#67e8f9;">λ₁ = +0.042</span>
+          </div>
+          <canvas id="poincareCanvas" width="250" height="100"></canvas>
+        </div>
+      </aside>
+
+      <!-- Right HUD -->
+      <aside class="hud-right">
+        <div class="hud-card emerald">
+          <div class="hud-header">
+            <span id="uiHomologyHeader" style="color:#34d399;">ГОМОЛОГИИ ХОВАНОВА H^{i,j}(L)</span>
+          </div>
+          <div id="tensorStream" class="tensor-list"></div>
+        </div>
+      </aside>
+
+      <!-- Expandable Esoteric Codex Modal -->
+      <section id="codexModal" class="codex-modal hidden">
+        <div>
+          <div class="codex-top">
+            <span id="uiCodexTitle" class="codex-title"></span>
+            <button id="btnCloseCodex" class="btn-close">✕</button>
+          </div>
+          <p id="uiCodexBody1" class="codex-body"></p>
+          <div class="codex-equation">W(A) = (k / 4π) ∫_S³ Tr(A ∧ dA + (2/3) A ∧ A ∧ A)     |     ∇_μ Ψ_± = ∂_μ Ψ_± + ½ ω_μ^{ab} γ_{ab} Ψ_±
+π_Hopf : S³ ⊂ C² ⟶ CP¹ ≅ S²,     (z₁, z₂) ↦ [z₁ : z₂],     η_APS(D_A) = (1/π) ∫₀^∞ Tr(D_A e^{-t D_A²}) dt / √t</div>
+          <p id="uiCodexBody2" class="codex-body" style="color:#f5d0fe;"></p>
+          <p id="uiCodexBody3" class="codex-body" style="color:#a7f3d0;"></p>
+        </div>
+        <div class="codex-footer">
+          <span id="uiCodexFooter"></span>
+          <span>SO(4) // CP⁴[5] // H^{i,j}_Khovanov</span>
+        </div>
+      </section>
+
+      <!-- Bottom Floating Preset Buttons -->
+      <div class="floating-bar">
+        <div class="preset-group">
+          <button data-preset="0" id="btnPreset0" class="preset-btn preset-0">I. Аттрактор Клиффорда</button>
+          <button data-preset="1" id="btnPreset1" class="preset-btn preset-1">II. Квинтика Калаби—Яу</button>
+          <button data-preset="2" id="btnPreset2" class="preset-btn preset-2">III. Хроно-Сингулярность</button>
+          <button id="btnInvert" class="invert-btn">⟳ Инверсия S³</button>
+        </div>
+        <div id="uiMouseHint" class="mouse-hint">ЛКМ / Колесо: 4D-вращение в W-орбите</div>
+      </div>
+    </main>
+
+    <!-- Bottom Parameter Control Deck -->
+    <footer class="control-deck">
+      <label class="slider-item">
+        <div class="slider-label-row">
+          <span id="lblTorsion" class="slider-label">Ξ-ИЗОКЛИННОЕ КРУЧЕНИЕ</span>
+          <span id="valTorsion" style="color:#38bdf8;font-weight:700;">1.62</span>
+        </div>
+        <input id="slTorsion" type="range" min="0.2" max="4.5" step="0.01" value="1.62" />
+      </label>
+
+      <label class="slider-item">
+        <div class="slider-label-row">
+          <span id="lblGenus" class="slider-label">Ψ-РОД РАССЛОЕНИЯ (p/q)</span>
+          <span id="valGenus" style="color:#e879f9;font-weight:700;">3.00</span>
+        </div>
+        <input id="slGenus" type="range" min="1.0" max="8.0" step="0.05" value="3.00" />
+      </label>
+
+      <label class="slider-item">
+        <div class="slider-label-row">
+          <span id="lblDispersion" class="slider-label">Ω-ФАЗОВАЯ ДИСПЕРСИЯ</span>
+          <span id="valDispersion" style="color:#34d399;font-weight:700;">0.78</span>
+        </div>
+        <input id="slDispersion" type="range" min="0.05" max="2.0" step="0.01" value="0.78" />
+      </label>
+
+      <label class="slider-item">
+        <div class="slider-label-row">
+          <span id="lblFolding" class="slider-label">Λ-МЕТРИЧЕСКИЙ СДВИГ W</span>
+          <span id="valFolding" style="color:#fbbf24;font-weight:700;">0.45</span>
+        </div>
+        <input id="slFolding" type="range" min="0.0" max="1.5" step="0.01" value="0.45" />
+      </label>
+    </footer>
+  </div>
+
+  <script>
+    (() => {
+      const I18N = {
+        en: {
+          title: 'Ξ-HOPF HYPERFIBRATION // S³ → S²',
+          codexBtn: 'Ξ-CODEX',
+          spinorHeader: 'SPINOR CONNECTION ∇μΨ',
+          poincareHeader: 'POINCARÉ LOCUS ∂Ω',
+          homologyHeader: 'KHOVANOV HOMOLOGY H^{i,j}(L)',
+          preset0: 'I. Clifford Attractor',
+          preset1: 'II. Calabi–Yau Quintic',
+          preset2: 'III. Chrono-Singularity',
+          invertBtn: '⟳ S³ Eversion',
+          mouseHint: 'LMB / Wheel: SO(4) W-Orbit Rotation',
+          lblTorsion: 'Ξ-ISOCLINIC TORSION',
+          lblGenus: 'Ψ-FIBRATION GENUS (p/q)',
+          lblDispersion: 'Ω-SPECTRAL DISPERSION',
+          lblFolding: 'Λ-METRIC W-FOLDING',
+          states: ['COHERENT', 'QUINTIC CY₃', 'BIFURCATION Ω', 'S³ EVERTED'],
+          codexTitle: 'AXIOMATIC SPECIFICATION // TRANS-EIGEN CHRONOSYNCLASTIC FOLIATION',
+          codexBody1: 'This apparatus synthesizes non-abelian Chern–Simons gauge holonomies across an inverse stereographic Hopf fibration π: S³ ↪ R⁴ → CP¹. Each luminescent filament represents an isoclinic pre-image locus where chiral Weyl spinors undergo spontaneous topological de-compactification under Ricci-flat Kähler metric perturbations.',
+          codexBody2: 'By modulating the (p,q)-toroidal linking number and anomalous spectral dispersion Ω, the observer projects fourth-dimensional symplectic caustics directly onto the Poincaré recurrence boundary ∂Ω without collapsing the underlying Atiyah–Patodi–Singer η-invariant.',
+          codexBody3: 'When the W-Folding parameter Λ crosses the critical Pontryagin threshold, left-handed SU(2)_L and right-handed SU(2)_R Lie algebra generators decouple into asynchronous Khovanov bigraded torsion strata.',
+          codexFooter: 'STATUS: NON-EUCLIDEAN PHASE LOCK ACTIVE // ZERO TRIVIAL COHOMOLOGY DETECTED'
+        },
+        ru: {
+          title: 'Ξ-ГИПЕРРАССЛОЕНИЕ ХОПФА // S³ → S²',
+          codexBtn: 'КОДЕКС Ξ',
+          spinorHeader: 'СПИНОРНАЯ СВЯЗНОСТЬ ∇μΨ',
+          poincareHeader: 'СЕЧЕНИЕ ПУАНКАРЕ ∂Ω',
+          homologyHeader: 'ГОМОЛОГИИ ХОВАНОВА H^{i,j}(L)',
+          preset0: 'I. Аттрактор Клиффорда',
+          preset1: 'II. Квинтика Калаби—Яу',
+          preset2: 'III. Хроно-Сингулярность',
+          invertBtn: '⟳ Инверсия S³',
+          mouseHint: 'ЛКМ / Колесо: 4D-вращение в W-орбите',
+          lblTorsion: 'Ξ-ИЗОКЛИННОЕ КРУЧЕНИЕ',
+          lblGenus: 'Ψ-РОД РАССЛОЕНИЯ (p/q)',
+          lblDispersion: 'Ω-ФАЗОВАЯ ДИСПЕРСИЯ',
+          lblFolding: 'Λ-МЕТРИЧЕСКИЙ СДВИГ W',
+          states: ['КОГЕРЕНТНО', 'КВИНТИКА CY₃', 'БИФУРКАЦИЯ Ω', 'ИНВЕРСИЯ S³'],
+          codexTitle: 'АКСИОМАТИЧЕСКИЙ КОДЕКС // ХРОНОСИНКЛАСТИЧЕСКАЯ ФОЛИАЦИЯ НАД S³',
+          codexBody1: 'Установка осуществляет неабелеву редукцию калибровочной связности Черна—Саймонса вдоль обратного стереографического расслоения Хопфа π: S³ ↪ R⁴ → CP¹. Каждая каустическая траектория суть изоклинный прообраз кирального биспинора Вейля, претерпевающего топологическую декомпактификацию в риччи-плоской кэлеровой метрике.',
+          codexBody2: 'Модуляция тороидального индекса зацепления (p,q) и аномальной фазовой дисперсии Ω индуцирует проекцию четырёхмерных симплектических каустик на гиперповерхность возврата Пуанкаре ∂Ω без разрушения спектральной асимметрии эта-инварианта Атьи—Патоди—Зингера.',
+          codexBody3: 'При превышении параметром метрического сдвига Λ критического порога Понтрягина генераторы подалгебр Ли SU(2)_L и SU(2)_R расщепляются в асинхронные биградуированные страты кручения Хованова.',
+          codexFooter: 'СТАТУС: НЕЕВКЛИДОВ ФАЗОВЫЙ ЗАХВАТ АКТИВЕН // ТРИВИАЛЬНЫЕ КОГОМОЛОГИИ ОТСУТСТВУЮТ'
+        },
+        mn: {
+          title: 'Ξ-ХОПФЫН ГИПЕР ДАВХАРГАЖИЛТ // S³ → S²',
+          codexBtn: 'Ξ-СУДАР',
+          spinorHeader: 'СПИНОРЫН ХОЛБООС ∇μΨ',
+          poincareHeader: 'ПУАНКАРЕГИЙН ОГТЛОЛ ∂Ω',
+          homologyHeader: 'ХОВАНОВЫН ГОМОЛОГИ H^{i,j}(L)',
+          preset0: 'I. Клиффордын Татагч',
+          preset1: 'II. Калаби–Яу Квинтик',
+          preset2: 'III. Хроно-Сингулярность',
+          invertBtn: '⟳ S³ Урвуулалт',
+          mouseHint: 'Хулгана / Дугуй: SO(4) W-орбитын 4D эргэлт',
+          lblTorsion: 'Ξ-ИЗОКЛИН МУШГИРАЛТ',
+          lblGenus: 'Ψ-ДАВХАРГЫН ТӨРӨЛ (p/q)',
+          lblDispersion: 'Ω-ФАЗЫН ДИСПЕРСИ',
+          lblFolding: 'Λ-МЕТРИКИЙН W-ШИЛЖИЛТ',
+          states: ['КОГЕРЕНТ', 'КВИНТИК CY₃', 'БИФУРКАЦИ Ω', 'S³ УРВУУ'],
+          codexTitle: 'АКСИОМАТИК ТОДОРХОЙЛОЛТ // ХРОНОСИНКЛАСТИК ОГТОРГУЙН ФОЛИАЦИ',
+          codexBody1: 'Энэхүү төхөөрөмж нь урвуу стереограф Хопфын давхаргажилт π: S³ ↪ R⁴ → CP¹ дагуух Абелын бус Черн–Саймонсын калибрын голономийг синтезлэнэ. Гэрэлтэгч утаслаг бүр нь Риччи-хавтгай Кэлерийн метрикийн хэлбэлзэл дор топологийн задаргаанд орж буй Вейлийн спинорын изоклин прообраз юм.',
+          codexBody2: 'Тороид гогцооны (p,q)-индекс болон спектрийн гаж дисперс Ω-г тохируулснаар ажиглагч Атья–Патоди–Зингерийн η-инвариантыг эвдэлгүйгээр дөрвөн хэмжээст симплектик каустикийг Пуанкарегийн буцалтын зааг ∂Ω руу шууд проекцлоно.',
+          codexBody3: 'Метрикийн W-шилжилтийн параметр Λ нь Понтрягины критикийн босгыг давахад зүүн SU(2)_L болон баруун SU(2)_R Ли алгебрын генераторууд Ховановын давхар зэрэглэлт мушгиралтын давхаргуудад задарна.',
+          codexFooter: 'ТӨЛӨВ: ЕВКЛИДИЙН БУС ФАЗЫН ТҮГЖЭЭ ИДЭВХТЭЙ // ТРИВИАЛЬ КОГОМОЛОГИ ИЛРЭЭГҮЙ'
+        }
+      };
+
+      let currentLang = 'ru';
+      let currentStateIdx = 0;
+
+      function applyLanguage(lang) {
+        currentLang = lang;
+        const d = I18N[lang];
+        document.documentElement.lang = lang;
+        document.getElementById('uiTitle').textContent = d.title;
+        document.getElementById('uiCodexBtn').textContent = d.codexBtn;
+        document.getElementById('uiSpinorHeader').textContent = d.spinorHeader;
+        document.getElementById('uiPoincareHeader').textContent = d.poincareHeader;
+        document.getElementById('uiHomologyHeader').textContent = d.homologyHeader;
+        document.getElementById('btnPreset0').textContent = d.preset0;
+        document.getElementById('btnPreset1').textContent = d.preset1;
+        document.getElementById('btnPreset2').textContent = d.preset2;
+        document.getElementById('btnInvert').textContent = d.invertBtn;
+        document.getElementById('uiMouseHint').textContent = d.mouseHint;
+        document.getElementById('lblTorsion').textContent = d.lblTorsion;
+        document.getElementById('lblGenus').textContent = d.lblGenus;
+        document.getElementById('lblDispersion').textContent = d.lblDispersion;
+        document.getElementById('lblFolding').textContent = d.lblFolding;
+        document.getElementById('manifoldState').textContent = d.states[currentStateIdx];
+        document.getElementById('uiCodexTitle').textContent = d.codexTitle;
+        document.getElementById('uiCodexBody1').textContent = d.codexBody1;
+        document.getElementById('uiCodexBody2').textContent = d.codexBody2;
+        document.getElementById('uiCodexBody3').textContent = d.codexBody3;
+        document.getElementById('uiCodexFooter').textContent = d.codexFooter;
+
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.lang === lang);
+        });
+      }
+
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.addEventListener('click', () => applyLanguage(btn.dataset.lang));
+      });
+
+      const codexModal = document.getElementById('codexModal');
+      document.getElementById('btnCodex').addEventListener('click', () => {
+        codexModal.classList.toggle('hidden');
+      });
+      document.getElementById('btnCloseCodex').addEventListener('click', () => {
+        codexModal.classList.add('hidden');
+      });
+
+      const canvas = document.getElementById('glCanvas');
+      const gl = canvas.getContext('webgl2', { antialias: false, depth: false, stencil: false });
+
+      const vsSource = `#version 300 es
+        in vec2 aPos;
+        out vec2 vUv;
+        void main() {
+          vUv = aPos;
+          gl_Position = vec4(aPos, 0.0, 1.0);
+        }
+      `;
+
+      const fsSource = `#version 300 es
+        precision highp float;
+        in vec2 vUv;
+        out vec4 fragColor;
+
+        uniform vec2 uRes;
+        uniform float uTime;
+        uniform vec2 uRot;
+        uniform float uZoom;
+        uniform float uTorsion;
+        uniform float uGenus;
+        uniform float uDispersion;
+        uniform float uFolding;
+        uniform float uInvert;
+
+        mat2 rot2(float a) {
+          float c = cos(a), s = sin(a);
+          return mat2(c, -s, s, c);
+        }
+
+        vec4 rotSO4(vec4 p, float alpha, float beta) {
+          float ca = cos(alpha), sa = sin(alpha);
+          float cb = cos(beta),  sb = sin(beta);
+          vec4 q = vec4(
+            ca * p.x - sa * p.y,
+            sa * p.x + ca * p.y,
+            cb * p.z - sb * p.w,
+            sb * p.z + cb * p.w
+          );
+          float cw = cos(alpha * 0.5), sw = sin(alpha * 0.5);
+          q.xz = mat2(cw, -sw, sw, cw) * q.xz;
+          return q;
+        }
+
+        vec2 hopfFibrationField(vec3 p, float t) {
+          p += uFolding * 0.28 * sin(p.yzx * uGenus + t * 0.7);
+          float r2 = dot(p, p);
+          float invDenom = 1.0 / (1.0 + r2);
+          vec4 z = vec4(2.0 * p, r2 - 1.0) * invDenom;
+          z = rotSO4(z, t * 0.37 * uInvert, t * 0.23 * uTorsion);
+
+          float phi1 = atan(z.y, z.x);
+          float phi2 = atan(z.w, z.z);
+          float eta = atan(length(z.zw), length(z.xy));
+
+          float knotPhase = uGenus * phi1 - floor(uTorsion * 2.0 + 0.5) * phi2 + t * 1.1;
+          float targetEta = 0.785398 + 0.34 * sin(knotPhase);
+
+          float conformal = (1.0 + r2) * 0.5;
+          float dShell1 = abs(eta - targetEta) * conformal * 0.55;
+
+          float dualPhase = sin(uGenus * phi1 + uTorsion * phi2 * 2.0 - t * 0.8);
+          float dWeb = length(vec2(eta - 0.785398, dualPhase * 0.25)) * conformal * 0.52;
+
+          float dCore = abs(length(p) - 0.85 - 0.15 * cos(6.0 * phi1 + 4.0 * phi2)) * 0.6;
+          float d = min(dShell1, dWeb);
+          d = mix(d, min(d, dCore), clamp(uFolding * 0.6, 0.0, 1.0));
+
+          float spectralAngle = phi1 * 1.5 - phi2 * 1.5 + eta * 3.0;
+          return vec2(d, spectralAngle);
+        }
+
+        vec3 spectralPalette(float x) {
+          vec3 a = vec3(0.50, 0.52, 0.58);
+          vec3 b = vec3(0.48, 0.45, 0.48);
+          vec3 c = vec3(1.00, 1.00, 1.00);
+          vec3 d = vec3(0.05, 0.33, 0.67);
+          return a + b * cos(6.28318 * (c * x + d));
+        }
+
+        void main() {
+          vec2 uv = (vUv * uRes) / min(uRes.x, uRes.y);
+          float t = uTime;
+
+          vec3 ro = vec3(0.0, 0.0, -3.4 / uZoom);
+          vec3 rd = normalize(vec3(uv, 1.45));
+
+          mat2 rx = rot2(uRot.y);
+          mat2 ry = rot2(uRot.x + t * 0.12);
+          ro.yz = rx * ro.yz;
+          rd.yz = rx * rd.yz;
+          ro.xz = ry * ro.xz;
+          rd.xz = ry * rd.xz;
+
+          vec3 col = vec3(0.01, 0.015, 0.035);
+          float dist = 0.2;
+          vec3 accumGlow = vec3(0.0);
+
+          for (int i = 0; i < 72; i++) {
+            vec3 pos = ro + rd * dist;
+            vec2 res = hopfFibrationField(pos, t);
+            float d = res.x;
+            float phase = res.y;
+
+            vec3 fiberCol = spectralPalette(phase * 0.15915 + uDispersion * dist * 0.22 + t * 0.08);
+            float stepDist = max(abs(d) * 0.52, 0.015);
+            float density = exp(-abs(d) * 19.0) / (1.0 + dist * dist * 0.14);
+            float fringe = 0.65 + 0.35 * sin(phase * 4.0 + dist * 6.0 - t * 3.0);
+            accumGlow += fiberCol * density * fringe * 0.056;
+
+            dist += stepDist;
+            if (dist > 7.8) break;
+          }
+
+          col += accumGlow * (1.2 + uDispersion * 0.45);
+          float bgGrid = pow(max(0.0, sin(rd.x * 28.0) * sin(rd.y * 28.0) * sin(rd.z * 28.0)), 12.0);
+          col += vec3(0.15, 0.45, 0.85) * bgGrid * 0.18;
+
+          col = (col * (2.51 * col + 0.03)) / (col * (2.43 * col + 0.59) + 0.14);
+          col *= 1.0 - 0.22 * dot(vUv, vUv);
+          col = pow(clamp(col, 0.0, 1.0), vec3(0.9));
+
+          fragColor = vec4(col, 1.0);
+        }
+      `;
+
+      function compileShader(type, src) {
+        const s = gl.createShader(type);
+        gl.shaderSource(s, src);
+        gl.compileShader(s);
+        return s;
+      }
+
+      const prog = gl.createProgram();
+      gl.attachShader(prog, compileShader(gl.VERTEX_SHADER, vsSource));
+      gl.attachShader(prog, compileShader(gl.FRAGMENT_SHADER, fsSource));
+      gl.linkProgram(prog);
+      gl.useProgram(prog);
+
+      const quad = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+
+      const aPos = gl.getAttribLocation(prog, 'aPos');
+      gl.enableVertexAttribArray(aPos);
+      gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+      const uRes = gl.getUniformLocation(prog, 'uRes');
+      const uTime = gl.getUniformLocation(prog, 'uTime');
+      const uRot = gl.getUniformLocation(prog, 'uRot');
+      const uZoom = gl.getUniformLocation(prog, 'uZoom');
+      const uTorsion = gl.getUniformLocation(prog, 'uTorsion');
+      const uGenus = gl.getUniformLocation(prog, 'uGenus');
+      const uDispersion = gl.getUniformLocation(prog, 'uDispersion');
+      const uFolding = gl.getUniformLocation(prog, 'uFolding');
+      const uInvert = gl.getUniformLocation(prog, 'uInvert');
+
+      let rotX = 0.4, rotY = 0.35;
+      let velX = 0.0, velY = 0.0;
+      let dragging = false, lastX = 0, lastY = 0;
+      let zoom = 1.0;
+      let invertSign = 1.0;
+
+      const slTorsion = document.getElementById('slTorsion');
+      const slGenus = document.getElementById('slGenus');
+      const slDispersion = document.getElementById('slDispersion');
+      const slFolding = document.getElementById('slFolding');
+
+      const valTorsion = document.getElementById('valTorsion');
+      const valGenus = document.getElementById('valGenus');
+      const valDispersion = document.getElementById('valDispersion');
+      const valFolding = document.getElementById('valFolding');
+
+      function syncLabels() {
+        valTorsion.textContent = Number(slTorsion.value).toFixed(2);
+        valGenus.textContent = Number(slGenus.value).toFixed(2);
+        valDispersion.textContent = Number(slDispersion.value).toFixed(2);
+        valFolding.textContent = Number(slFolding.value).toFixed(2);
+      }
+
+      [slTorsion, slGenus, slDispersion, slFolding].forEach(el => {
+        el.addEventListener('input', syncLabels);
+      });
+
+      const presets = [
+        { torsion: 1.62, genus: 3.00, dispersion: 0.78, folding: 0.45, stateIdx: 0 },
+        { torsion: 2.85, genus: 5.00, dispersion: 1.35, folding: 1.12, stateIdx: 1 },
+        { torsion: 3.95, genus: 7.00, dispersion: 1.82, folding: 1.42, stateIdx: 2 }
+      ];
+
+      document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const p = presets[Number(btn.dataset.preset)];
+          slTorsion.value = p.torsion;
+          slGenus.value = p.genus;
+          slDispersion.value = p.dispersion;
+          slFolding.value = p.folding;
+          currentStateIdx = p.stateIdx;
+          document.getElementById('manifoldState').textContent = I18N[currentLang].states[currentStateIdx];
+          syncLabels();
+        });
+      });
+
+      document.getElementById('btnInvert').addEventListener('click', () => {
+        invertSign *= -1.0;
+        currentStateIdx = invertSign > 0 ? 0 : 3;
+        document.getElementById('manifoldState').textContent = I18N[currentLang].states[currentStateIdx];
+      });
+
+      canvas.addEventListener('pointerdown', e => {
+        dragging = true;
+        lastX = e.clientX;
+        lastY = e.clientY;
+        canvas.setPointerCapture(e.pointerId);
+      });
+      canvas.addEventListener('pointermove', e => {
+        if (!dragging) return;
+        const dx = (e.clientX - lastX) * 0.007;
+        const dy = (e.clientY - lastY) * 0.007;
+        velX = dx;
+        velY = dy;
+        rotX += dx;
+        rotY = Math.max(-1.45, Math.min(1.45, rotY + dy));
+        lastX = e.clientX;
+        lastY = e.clientY;
+      });
+      canvas.addEventListener('pointerup', () => { dragging = false; });
+      canvas.addEventListener('wheel', e => {
+        e.preventDefault();
+        zoom = Math.max(0.55, Math.min(2.2, zoom - e.deltaY * 0.001));
+      }, { passive: false });
+
+      const pCanvas = document.getElementById('poincareCanvas');
+      const pCtx = pCanvas.getContext('2d');
+      let poincareAngle = 0;
+
+      const matrixDump = document.getElementById('matrixDump');
+      const tensorStream = document.getElementById('tensorStream');
+      const chernReadout = document.getElementById('chernReadout');
+      const holonomyReadout = document.getElementById('holonomyReadout');
+      const fpsReadout = document.getElementById('fpsReadout');
+      const lyapunovReadout = document.getElementById('lyapunovReadout');
+
+      const greekLabels = ['Γ¹₂₃', 'Γ²₁₄', 'R₁₂¹²', 'R₃₄³⁴', '∇₀ψL', '∇₃ψR', 'Tr(F∧F)', 'det(g_μν)'];
+
+      function updateTelemetry(t, torsion, genus, folding) {
+        let html = '';
+        for (let i = 0; i < 6; i++) {
+          const re = Math.cos(t * (0.7 + i * 0.21) + torsion * i).toFixed(3);
+          const im = Math.sin(t * (0.5 + i * 0.17) - genus * i).toFixed(3);
+          const sign = im >= 0 ? '+' : '';
+          html += `<div>Ψ_${i}: ${re}${sign}${im}i</div>`;
+        }
+        matrixDump.innerHTML = html;
+
+        let tHtml = '';
+        for (let i = 0; i < 5; i++) {
+          const val = (Math.sin(t * 0.9 + i * 1.7 + folding * 2.0) * (1.2 + torsion * 0.3)).toFixed(5);
+          tHtml += `<div class="tensor-row"><span>${greekLabels[i]}</span><span style="color:#6ee7b7;">${val}</span></div>`;
+        }
+        tensorStream.innerHTML = tHtml;
+
+        const cs = (Math.cos(t * 0.31) * torsion * 0.45).toFixed(5);
+        const hol = (2.0 - 0.02 * Math.sin(t * 1.3) * folding).toFixed(4);
+        const lyap = (0.015 * torsion * Math.cos(t * 0.4) + 0.03 * folding).toFixed(4);
+        chernReadout.textContent = `CS(A) = ${cs >= 0 ? '+' : ''}${cs} i`;
+        holonomyReadout.textContent = `∮ω = ${hol} π`;
+        lyapunovReadout.textContent = `λ₁ = ${lyap >= 0 ? '+' : ''}${lyap}`;
+        fpsReadout.textContent = `τ = ${t.toFixed(2)}s`;
+      }
+
+      function drawPoincare(t, torsion, genus, dispersion) {
+        pCtx.fillStyle = 'rgba(0, 0, 0, 0.12)';
+        pCtx.fillRect(0, 0, pCanvas.width, pCanvas.height);
+
+        const cx = pCanvas.width * 0.5;
+        const cy = pCanvas.height * 0.5;
+        for (let i = 0; i < 18; i++) {
+          poincareAngle += 0.045;
+          const a = poincareAngle;
+          const r = 36 * Math.sin(genus * a * 0.3 + t * 0.4) + 11 * Math.cos(torsion * a);
+          const x = cx + Math.cos(a) * r * 1.45;
+          const y = cy + Math.sin(a * torsion * 0.5) * r * 0.88;
+          const hue = (a * 28 + t * 40 * dispersion) % 360;
+          pCtx.fillStyle = `hsla(${hue}, 90%, 68%, 0.85)`;
+          pCtx.fillRect(x, y, 1.9, 1.9);
+        }
+      }
+
+      function resize() {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const w = Math.floor(canvas.clientWidth * dpr);
+        const h = Math.floor(canvas.clientHeight * dpr);
+        if (canvas.width !== w || canvas.height !== h) {
+          canvas.width = w;
+          canvas.height = h;
+          gl.viewport(0, 0, w, h);
+        }
+      }
+
+      applyLanguage('ru');
+
+      let lastTelemetryUpdate = 0;
+      function frame(now) {
+        const t = now * 0.001;
+        resize();
+
+        if (!dragging) {
+          velX *= 0.94;
+          velY *= 0.94;
+          rotX += velX;
+          rotY = Math.max(-1.45, Math.min(1.45, rotY + velY));
+        }
+
+        const torsion = parseFloat(slTorsion.value);
+        const genus = parseFloat(slGenus.value);
+        const dispersion = parseFloat(slDispersion.value);
+        const folding = parseFloat(slFolding.value);
+
+        gl.uniform2f(uRes, canvas.width, canvas.height);
+        gl.uniform1f(uTime, t);
+        gl.uniform2f(uRot, rotX, rotY);
+        gl.uniform1f(uZoom, zoom);
+        gl.uniform1f(uTorsion, torsion);
+        gl.uniform1f(uGenus, genus);
+        gl.uniform1f(uDispersion, dispersion);
+        gl.uniform1f(uFolding, folding);
+        gl.uniform1f(uInvert, invertSign);
+
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        drawPoincare(t, torsion, genus, dispersion);
+
+        if (now - lastTelemetryUpdate > 90) {
+          updateTelemetry(t, torsion, genus, folding);
+          lastTelemetryUpdate = now;
+        }
+
+        requestAnimationFrame(frame);
+      }
+
+      requestAnimationFrame(frame);
+    })();
+  </script>
+</body>
+</html>
